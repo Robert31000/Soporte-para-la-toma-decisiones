@@ -1,0 +1,339 @@
+
+USE master;
+GO
+
+IF EXISTS(SELECT * FROM master.sys.databases WHERE name='soporte')
+
+BEGIN
+    ALTER DATABASE soporte SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE soporte;
+END
+GO
+
+CREATE DATABASE soporte;
+GO
+
+USE soporte;
+GO
+
+
+-- Tabla Person
+CREATE TABLE Person (
+    PersonID INT PRIMARY KEY,
+    DateOfBirth DATE,
+    Name VARCHAR(50),
+    Phone VARCHAR(50)
+);
+
+-- Tabla Customer
+CREATE TABLE Customer (
+    CustomerID INT PRIMARY KEY,
+    nit VARCHAR(50),
+	Idperson int ,
+	foreign key (idperson) references Person(PersonId)
+);
+
+-- Tabla Frequent_Flyer_Card
+CREATE TABLE Frequent_Flyer_Card (
+    FFC_Number INT PRIMARY KEY,
+    Miles INT,
+    Meal_Code VARCHAR(50),
+    CustomerID INT,
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+);
+
+
+
+-- Tabla Country
+CREATE TABLE Country (
+    CountryID INT PRIMARY KEY,
+    Name VARCHAR(255)
+);
+
+
+-- Tabla City
+CREATE TABLE City (
+    CityID INT PRIMARY KEY,
+    Name VARCHAR(255),
+    CountryID INT,
+    FOREIGN KEY (CountryID) REFERENCES Country(CountryID)
+);
+
+-- Tabla Airport
+CREATE TABLE Airport (
+		AirportID INT PRIMARY KEY  ,
+		Name VARCHAR(100) NOT NULL,
+		CityID INT,
+		FOREIGN KEY (CityID) REFERENCES City(CityID)
+		);
+
+
+-- Tabla Document
+CREATE TABLE Document (
+    DocumentID INT PRIMARY KEY,
+    DocumentNumber VARCHAR(50),
+    Name VARCHAR(50),
+    LastName VARCHAR(50),
+	countryId INT,
+	foreign key (countryId) references country(Countryid)
+);
+
+-- Tabla FlightNumber
+CREATE TABLE FlightNumber (
+    FlightNumberID INT PRIMARY KEY,
+    DepartureTime TIME,
+    Description VARCHAR(255),
+    Type VARCHAR(50),
+	StartAirportID INT NOT NULL,
+	GoalAirportID INT NOT NULL,
+	FOREIGN KEY (StartAirportID) REFERENCES Airport(AirportID),
+	FOREIGN KEY (GoalAirportID) REFERENCES Airport(AirportID),
+);
+
+
+
+CREATE TABLE Seat (
+		SeatID INT PRIMARY KEY  ,
+		Size VARCHAR(50) NOT NULL,
+		Number INT NOT NULL,
+		Location VARCHAR(50) NOT NULL
+
+	);
+
+-- Tabla PlaneModel
+CREATE TABLE PlaneModel (
+    PlaneModelID INT PRIMARY KEY,
+    Description VARCHAR(255),
+    Graphic VARCHAR(255),
+	idseat int,
+	foreign key (idseat) references Seat(SeatID)
+);
+
+
+
+-- Tabla Airline
+CREATE TABLE Airline (
+    AirlineID INT PRIMARY KEY,
+    Name VARCHAR(255),
+    Nature VARCHAR(50),
+    Type VARCHAR(50)
+);
+-- Tabla Airplane
+CREATE TABLE Airplane (
+    AirplaneID INT PRIMARY KEY,
+    RegistrationNumber VARCHAR(50),
+    BeginOfOperation DATE,
+    Status VARCHAR(50),
+    PlaneModelID INT,
+	idAirline int,
+	foreign key (idAirline) references Airline(AirlineID),
+    FOREIGN KEY (PlaneModelID) REFERENCES PlaneModel(PlaneModelID)
+);
+
+
+-- Tabla Flight
+CREATE TABLE Flight (
+    FlightID INT PRIMARY KEY,
+    BoardingTime TIME,
+    FlightDate DATE,
+    Gate VARCHAR(50),
+    CheckInCounter VARCHAR(50),
+	id_FlightNumberID int,
+	FlightTramo int,
+	AirplaneID int,
+	foreign key (AirplaneID) references Airplane(AirplaneID),
+	foreign key (FlightTramo) references Flight(FlightID),
+	foreign key (id_FlightNumberID) references FlightNumber(FlightNumberID)
+);
+
+
+-- Tabla category_pasaje
+CREATE TABLE category_pasaje (
+    ID INT PRIMARY KEY,
+    Nombre VARCHAR(255)
+);
+
+
+create table category_jobs(
+id int primary key,
+name_work varchar(100) not null
+
+);
+-- Tabla Crew_member
+CREATE TABLE Crew_member (
+    Id_crew_member INT PRIMARY KEY,
+    job_position VARCHAR(50),
+	id_airplane int,
+	FlightID int,
+	id_category_jobs int,
+	foreign key (id_category_jobs) references category_jobs(id),
+	foreign key (FlightID) references Flight(FlightID),
+	foreign key (id_airplane) references Airplane(AirplaneID)
+);
+create table flight_cancellation(
+id int primary key,
+description varchar(100) not null,
+dateF date not null,
+status varchar(50) not null,
+idFlight int ,
+foreign key (idFlight) references Flight(FlightId)
+);
+-- Tabla flight_cancellation_fine
+CREATE TABLE flight_cancellation_fine (
+    ID INT PRIMARY KEY,
+    cancellation_date DATE,
+    description VARCHAR(255),
+    Status VARCHAR(50),
+   
+);
+
+
+-- Tabla rescheduling_reservation
+CREATE TABLE rescheduling_reservation (
+    ID INT PRIMARY KEY,
+    date_reservation DATE,
+	id_flight_cancellation_fine int,
+	foreign key (id_flight_cancellation_fine) references flight_cancellation_fine(id)
+);
+
+
+-- Tabla Book_Flight
+CREATE TABLE Book_Flight (
+    ID INT PRIMARY KEY,
+    reservation_date DATE,
+    status VARCHAR(50),
+    CustomerID INT,
+	idFlight int,
+	foreign key (idFlight) references Flight(FlightId),
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+);
+-- Tabla Currency
+CREATE TABLE Currency (
+    ID INT PRIMARY KEY,
+    name VARCHAR(50),
+    status VARCHAR(50),
+   );
+
+-- Tabla Payment_Method
+CREATE TABLE Payment_Method (
+    ID INT PRIMARY KEY,
+    method_name VARCHAR(50),
+    provider_name VARCHAR(50)
+);
+
+-- Tabla Payment
+CREATE TABLE Payment (
+    ID INT PRIMARY KEY,
+    total_amount DECIMAL(10, 2),
+    payment_date DATE,
+    Payment_MethodID INT,
+	idCurrency int,
+	idfligth int,
+	foreign key (idfligth) references Book_Flight(ID),
+	foreign key (idCurrency) references Currency(id),
+    FOREIGN KEY (Payment_MethodID) REFERENCES Payment_Method(ID)
+);
+
+-- Tabla Cancellation_Reservation
+CREATE TABLE Cancellation_Reservation (
+    ID INT PRIMARY KEY,
+    cancellation_date DATE,
+    Fine DECIMAL(10, 2),
+    Description VARCHAR(255),
+    Status VARCHAR(50),
+    Book_FlightID INT,
+	id_flight_cancellation_fine int,
+	foreign key (id_flight_cancellation_fine) references flight_cancellation_fine(id),
+    FOREIGN KEY (Book_FlightID) REFERENCES Book_Flight(ID)
+);
+
+
+-- Tabla Ticket
+CREATE TABLE Ticket (
+    TicketID INT PRIMARY KEY,
+    TicketingCode VARCHAR(50),
+	idCategoryPasaje int,
+	idperson int,
+	idBook_flight int,
+	documentId int,
+	foreign key (documentId) references document(documentId),
+	foreign key (idBook_flight) references Book_Flight(id),
+	foreign key (idperson) references Person(PersonId),
+	foreign key (idCategoryPasaje) references category_pasaje(id)
+
+);
+
+-- Tabla Coupon
+CREATE TABLE Coupon (
+    CouponID INT PRIMARY KEY,
+    DateOfRedemption DATE,
+    Class VARCHAR(50),
+    Standby VARCHAR(50) NOT NULL,
+    MealCode VARCHAR(50),
+    TicketID INT,
+	FlightID int,
+	foreign key (FlightID) references flight(FlightID),
+    FOREIGN KEY (TicketID) REFERENCES Ticket(TicketID)
+);
+-- Tabla Boarding_Pass
+CREATE TABLE Boarding_Pass (
+    ID INT PRIMARY KEY,
+    gate_number VARCHAR(50),
+	CouponID int ,
+	foreign key (CouponID) references Coupon(CouponID)
+);
+create table PiecesOfLuggage(
+LugaggeID int primary key,
+Number int,
+Weight int not null,
+CouponID int,
+foreign key (CouponID) references Coupon(CouponID)
+);
+
+
+
+
+------------------------------------------------------------- codigo tocado
+
+-- Tabla AvailableSeat
+CREATE TABLE AvailableSeat (
+    AvailableSeatID INT PRIMARY KEY,
+    Size VARCHAR(50),
+    Number INT,
+    Location VARCHAR(50),
+	idSeat int,
+    FlightID INT,
+	id_Coupon int,
+	foreign key (id_Coupon) references Coupon(CouponID),
+	foreign key (idSeat) references Seat(SeatId),
+    FOREIGN KEY (FlightID) REFERENCES Flight(FlightID)
+);
+
+
+
+
+-- Tabla workers
+CREATE TABLE workers (
+    CustomerID INT,
+    PersonID INT,
+    PRIMARY KEY (CustomerID, PersonID),
+    FOREIGN KEY (PersonID) REFERENCES Person(PersonID)
+);
+
+
+-- Tabla IDCARD (Herencia de Document)
+CREATE TABLE IDCARD (
+    DocumentID INT PRIMARY KEY,
+    Issued DATE,
+    Expired DATE,
+    FOREIGN KEY (DocumentID) REFERENCES Document(DocumentID)
+);
+
+-- Tabla PASSPORT (Herencia de Document)
+CREATE TABLE PASSPORT (
+    DocumentID INT PRIMARY KEY,
+    Issued DATE,
+    Expired DATE,
+    FOREIGN KEY (DocumentID) REFERENCES Document(DocumentID)
+);
+
